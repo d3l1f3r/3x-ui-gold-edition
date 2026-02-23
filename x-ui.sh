@@ -1661,6 +1661,31 @@ run_speedtest() {
     speedtest
 }
 
+run_librespeed() {
+    #Test GO
+    if command -v go &>/dev/null; then
+        echo "GO installed!"
+    else
+        #Intalling GO
+        echo "Installing GO..."
+        VERSION=$(curl -s https://go.dev/dl/?mode=json | grep -m 1 'version' | cut -d'"' -f4)
+        wget https://go.dev/dl/$VERSION.linux-amd64.tar.gz
+        rm -rf /usr/local/go && tar -C /usr/local -xzf $VERSION.linux-amd64.tar.gz
+        export PATH=$PATH:/usr/local/go/bin
+        echo "GO installed!"
+    fi
+    
+    found=$(find / -type d -name "speedtest-cli" 2>/dev/null)
+    if [ -n "$found" ]; then
+        echo "Test speed..."
+        $found/out/librespeed-cli-linux-amd64
+    else
+        echo "Installing Librespeed..."
+        git clone https://github.com/librespeed/speedtest-cli
+        cd speedtest-cli/ && ./build.sh
+        echo "Start this option again!"
+    fi
+}
 
 
 ip_validation() {
@@ -2204,10 +2229,11 @@ show_menu() {
 │  ${green}23.${plain} Enable BBR                                │
 │  ${green}24.${plain} Update Geo Files                          │
 │  ${green}25.${plain} Speedtest by Ookla                        │
+│  ${green}26.${plain} Librespeed                                │
 ╚────────────────────────────────────────────────╝
 "
     show_status
-    echo && read -rp "Please enter your selection [0-25]: " num
+    echo && read -rp "Please enter your selection [0-26]: " num
 
     case "${num}" in
     0)
@@ -2288,8 +2314,11 @@ show_menu() {
     25)
         run_speedtest
         ;;
+    26)
+        run_librespeed
+        ;;
     *)
-        LOGE "Please enter the correct number [0-25]"
+        LOGE "Please enter the correct number [0-26]"
         ;;
     esac
 }

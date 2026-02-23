@@ -580,7 +580,7 @@ prompt_and_setup_ssl() {
 
         # 3.1 Request Domain to compose Panel URL later
         read -rp "Please enter domain name certificate issued for: " custom_domain
-        custom_domain="${custom_domain// /}" # Убираем пробелы
+        custom_domain="${custom_domain// /}" # Delete spaces
 
         # 3.2 Loop for Certificate Path
         while true; do
