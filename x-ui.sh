@@ -1664,15 +1664,15 @@ run_speedtest() {
 run_librespeed() {
     #Test GO
     if command -v go &>/dev/null; then
-        echo "GO installed!"
+        echo -e "${green}${plain} GO installed!"
     else
         #Intalling GO
-        echo "Installing GO..."
+        echo echo -e "${yellow}${plain} Installing GO..."
         VERSION=$(curl -s https://go.dev/dl/?mode=json | grep -m 1 'version' | cut -d'"' -f4)
         wget https://go.dev/dl/$VERSION.linux-amd64.tar.gz
         rm -rf /usr/local/go && tar -C /usr/local -xzf $VERSION.linux-amd64.tar.gz
         export PATH=$PATH:/usr/local/go/bin
-        echo "GO installed!"
+        echo -e "${green}${plain} GO installed!"
     fi
     
     found=$(find / -type d -name "speedtest-cli" 2>/dev/null)
@@ -1680,13 +1680,104 @@ run_librespeed() {
         echo "Test speed..."
         $found/out/librespeed-cli-linux-amd64
     else
-        echo "Installing Librespeed..."
+        echo -e "${yellow}${plain}Installing Librespeed..."
         git clone https://github.com/librespeed/speedtest-cli
         cd speedtest-cli/ && ./build.sh
-        echo "Start this option again!"
+        echo -e "${green}${plain}Start this option again!"
     fi
 }
 
+create_honeypot() {
+
+    local pkg_manager=""
+    local server_ip=$(curl -s --max-time 3 https://4.ident.me)
+
+    echo -e "${yellow}${plain}Downloading sources and Utilites..."
+    if command -v dnf &>/dev/null; then
+        pkg_manager="dnf"
+        dnf install httpd -y
+    elif command -v yum &>/dev/null; then
+        pkg_manager="yum"
+        yum install httpd
+    elif command -v apt-get &>/dev/null; then
+        pkg_manager="apt-get"
+        apt-get install apache2
+    elif command -v apt &>/dev/null; then
+        pkg_manager="apt"
+        apt install apache2
+    fi
+
+    if [[ -z $pkg_manager ]]; then
+        echo "Error: Package manager not found. You may need to install HoneyPot manually."
+        return 1
+    fi
+
+    # Start apache server for HoneyPot
+    systemctl enable apache2
+    systemctl start apache2
+    
+    echo -e "${yellow}${plain}Installing HoneyPot..."
+
+    git clone https://github.com/d3l1f3r/SpaceSaver.git
+    mv SpaceSaver/ /var/www/html/
+
+    # Configs
+    echo """
+<VirtualHost *:80>
+    ServerName SpaceSaver
+    DocumentRoot /var/www/html/SpaceSaver
+
+    <Directory /var/www/html/SpaceSaver>
+        Options Indexes FollowSymLinks
+        AllowOverride All 
+        Require all granted
+    </Directory>
+
+    ErrorLog ${APACHE_LOG_DIR}/error.log
+    CustomLog ${APACHE_LOG_DIR}/access.log combined
+</VirtualHost>""" >> /etc/apache2/sites-enabled/spacesaver.conf
+
+    echo """
+<VirtualHost *:80>
+    ServerName SpaceSaver
+    DocumentRoot /var/www/html/SpaceSaver
+
+    <Directory /var/www/html/SpaceSaver>
+        Options Indexes FollowSymLinks
+        AllowOverride All 
+        Require all granted
+    </Directory>
+
+    ErrorLog ${APACHE_LOG_DIR}/error.log
+    CustomLog ${APACHE_LOG_DIR}/access.log combined
+</VirtualHost>""" >> /etc/apache2/sites-available/spacesaver.conf
+    
+    # Restarting apache server
+    sudo systemctl reload apache2
+
+    # Access rights to HoneyPot's files
+    sudo chown -R www-data:www-data /var/www/html/SpaceSaver
+    sudo chmod -R 755 /var/www/html/SpaceSaver
+    chmod 644 /var/www/html/SpaceSaver/index.html
+
+    sudo systemctl reload apache2
+
+    echo -e "${green}${plain}Done!"
+    echo -e "${green}${plain}Available here -> http://$server_ip:80"
+}
+
+change_dns() {
+    echo -e "${yellow}${plain}Changing DNS resolver"
+    echo -e "${plain}Enter resolver (default: 9.9.9.9): "
+    read resolver
+
+    if [ -n "$resolver" ]; then
+        echo "nameserver    $resolver" > /etc/resolv.conf
+    else
+        echo "nameserver    9.9.9.9" > /etc/resolv.conf
+    fi
+    echo -e "${green}${plain}Done!"
+}
 
 ip_validation() {
     ipv6_regex="^(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))$"
@@ -2225,15 +2316,17 @@ show_menu() {
 │  ${green}20.${plain} IP Limit Management                       │
 │  ${green}21.${plain} Firewall Management                       │
 │  ${green}22.${plain} SSH Port Forwarding Management            │
+│  ${green}23.${plain} HoneyPot (Fakesite)                       │
+│  ${green}24.${plain} Change DNS resolver                       │
 │────────────────────────────────────────────────│
-│  ${green}23.${plain} Enable BBR                                │
-│  ${green}24.${plain} Update Geo Files                          │
-│  ${green}25.${plain} Speedtest by Ookla                        │
-│  ${green}26.${plain} Librespeed                                │
+│  ${green}25.${plain} Enable BBR                                │
+│  ${green}26.${plain} Update Geo Files                          │
+│  ${green}27.${plain} Speedtest by Ookla                        │
+│  ${green}28.${plain} Librespeed                                │
 ╚────────────────────────────────────────────────╝
 "
     show_status
-    echo && read -rp "Please enter your selection [0-26]: " num
+    echo && read -rp "Please enter your selection [0-28]: " num
 
     case "${num}" in
     0)
@@ -2306,19 +2399,25 @@ show_menu() {
         SSH_port_forwarding
         ;;
     23)
-        bbr_menu
+        create_honeypot
         ;;
     24)
-        update_geo
+        change_dns
         ;;
     25)
-        run_speedtest
+        bbr_menu
         ;;
     26)
+        update_geo
+        ;;
+    27)
+        run_speedtest
+        ;;
+    28)
         run_librespeed
         ;;
     *)
-        LOGE "Please enter the correct number [0-26]"
+        LOGE "Please enter the correct number [0-28]"
         ;;
     esac
 }
