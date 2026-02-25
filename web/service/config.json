@@ -78,6 +78,17 @@
         "protocol": [
           "bittorrent"
         ]
+      },
+      {
+        "type": "field",
+        "outboundTag": "blocked",
+        "domain": [
+          "ext:geosite_RU.dat:category-ads-all",
+          "ext:geosite_RU.dat:ru-available-only-inside",
+          "regexp:.*\\.ru$",
+          "regexp:.*\\.su$",
+          "regexp:.*\\.xn--p1ai$"
+        ]
       }
     ]
   },
