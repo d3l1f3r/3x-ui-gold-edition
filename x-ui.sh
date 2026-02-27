@@ -1672,28 +1672,16 @@ run_speedtest() {
 }
 
 run_librespeed() {
-    #Test GO
-    if command -v go &>/dev/null; then
-        echo -e "${green}${plain} GO installed!"
+
+    if command -v librespeed-cli &>/dev/null; then
+        librespeed-cli
     else
-        #Intalling GO
-        echo echo -e "${yellow}${plain} Installing GO..."
-        VERSION=$(curl -s https://go.dev/dl/?mode=json | grep -m 1 'version' | cut -d'"' -f4)
-        wget https://go.dev/dl/$VERSION.linux-amd64.tar.gz
-        rm -rf /usr/local/go && tar -C /usr/local -xzf $VERSION.linux-amd64.tar.gz
-        export PATH=$PATH:/usr/local/go/bin
-        echo -e "${green}${plain} GO installed!"
-    fi
-    
-    found=$(find / -type d -name "speedtest-cli" 2>/dev/null)
-    if [ -n "$found" ]; then
-        echo "Test speed..."
-        $found/out/librespeed-cli-linux-amd64
-    else
-        echo -e "${yellow}${plain}Installing Librespeed..."
-        git clone https://github.com/librespeed/speedtest-cli
-        cd speedtest-cli/ && ./build.sh
-        echo -e "${green}${plain}Start this option again!"
+        #Intalling LibreSpeed
+        echo -e "${yellow} Installing LibreSpeed..."
+        VERSION=$(curl -s "https://api.github.com/repos/librespeed/speedtest-cli/releases/latest"| grep '"tag_name":' | sed -E 's/.*"v?([^"]+)".*/\1/')
+        wget https://github.com/librespeed/speedtest-cli/releases/download/v${VERSION}/librespeed-cli_${VERSION}_linux_amd64.tar.gz
+        tar -xzvf librespeed-cli_${VERSION}_linux_amd64.tar.gz && mv librespeed-cli /usr/bin
+        librespeed-cli
     fi
 }
 
@@ -1768,8 +1756,6 @@ create_honeypot() {
 
 
         echo -e "${yellow}Installing HoneyPot..."
-
-        git clone https://github.com/d3l1f3r/SpaceSaver.git
         mv SpaceSaver/ /var/www/html/
 
         # Config for apache2
