@@ -1681,6 +1681,7 @@ run_librespeed() {
         VERSION=$(curl -s "https://api.github.com/repos/librespeed/speedtest-cli/releases/latest"| grep '"tag_name":' | sed -E 's/.*"v?([^"]+)".*/\1/')
         wget https://github.com/librespeed/speedtest-cli/releases/download/v${VERSION}/librespeed-cli_${VERSION}_linux_amd64.tar.gz
         tar -xzvf librespeed-cli_${VERSION}_linux_amd64.tar.gz && mv librespeed-cli /usr/bin
+        echo -e "${green}Starting libreSpeed..."
         librespeed-cli
     fi
 }
