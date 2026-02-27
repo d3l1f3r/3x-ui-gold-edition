@@ -1698,56 +1698,82 @@ run_librespeed() {
 }
 
 create_honeypot() {
-
-    local pkg_manager=""
     local server_ip=$(curl -s --max-time 3 https://4.ident.me)
 
-    echo -e "${yellow}${plain}Downloading sources and Utilites..."
-    if command -v dnf &>/dev/null; then
-        pkg_manager="dnf"
-        dnf install httpd -y
-    elif command -v yum &>/dev/null; then
-        pkg_manager="yum"
-        yum install httpd
-    elif command -v apt-get &>/dev/null; then
-        pkg_manager="apt-get"
-        apt-get install apache2
-    elif command -v apt &>/dev/null; then
-        pkg_manager="apt"
-        apt install apache2
-    fi
+    echo -e "${plain}Do you want to use: ${green}Apache ${plain}or ${green}Nginx"
 
-    if [[ -z $pkg_manager ]]; then
-        echo "Error: Package manager not found. You may need to install HoneyPot manually."
-        return 1
-    fi
+    read -p "Apache or Nginx: " nginx_or_apache
 
-    # Start apache server for HoneyPot
-    systemctl enable apache2
-    systemctl start apache2
-    
-    echo -e "${yellow}${plain}Installing HoneyPot..."
+    echo -e "${yellow}Downloading sources and Utilites..."
 
-    git clone https://github.com/d3l1f3r/SpaceSaver.git
-    mv SpaceSaver/ /var/www/html/
+    if [ "$nginx_or_apache" = "Apache" ]; then
+        case "${release}" in
+        ubuntu)
+            apt-get update
+            apt-get install apache2 -y
+            ;;
+        debian)
+            apt-get update
+            apt-get install -y apache2
+            ;;
+        armbian)
+            apt-get update && apt-get install apache2 -y
+            ;;
+        fedora | amzn | virtuozzo | rhel | almalinux | rocky | ol)
+            dnf -y update && dnf -y install httpd
+            ;;
+        centos)
+            yum -y install apache2
+            ;;
+        arch | manjaro | parch)
+            pacman -Syu --noconfirm apache
+            ;;
+        *)
+            echo -e "${red}Unsupported operating system. Please check the script and install the necessary packages manually.${plain}\n"
+            exit 1
+            ;;
+        esac
 
-    # Configs
-    echo """
-<VirtualHost *:80>
-    ServerName SpaceSaver
-    DocumentRoot /var/www/html/SpaceSaver
+        # Start apache server for HoneyPot
+        case "${release}" in
+        ubuntu)
+            systemctl enable apache2
+            systemctl start apache2
+            ;;
+        debian)
+            systemctl enable apache2
+            systemctl start apache2
+            ;;
+        armbian)
+            systemctl enable apache2
+            systemctl start apache2
+            ;;
+        fedora | amzn | virtuozzo | rhel | almalinux | rocky | ol)
+            systemctl enable httpd
+            systemctl start httpd
+            ;;
+        centos)
+            systemctl enable httpd
+            systemctl start httpd
+            ;;
+        arch | manjaro | parch)
+            systemctl enable apache
+            systemctl start apache
+            ;;
+        *)
+            echo -e "${red}Cannot start apache service.${plain}\n"
+            exit 1
+            ;;
+        esac
 
-    <Directory /var/www/html/SpaceSaver>
-        Options Indexes FollowSymLinks
-        AllowOverride All 
-        Require all granted
-    </Directory>
 
-    ErrorLog ${APACHE_LOG_DIR}/error.log
-    CustomLog ${APACHE_LOG_DIR}/access.log combined
-</VirtualHost>""" >> /etc/apache2/sites-enabled/spacesaver.conf
+        echo -e "${yellow}Installing HoneyPot..."
 
-    echo """
+        git clone https://github.com/d3l1f3r/SpaceSaver.git
+        mv SpaceSaver/ /var/www/html/
+
+        # Config for apache2
+        echo """
 <VirtualHost *:80>
     ServerName SpaceSaver
     DocumentRoot /var/www/html/SpaceSaver
@@ -1761,19 +1787,121 @@ create_honeypot() {
     ErrorLog ${APACHE_LOG_DIR}/error.log
     CustomLog ${APACHE_LOG_DIR}/access.log combined
 </VirtualHost>""" >> /etc/apache2/sites-available/spacesaver.conf
+
+        ln -sf /etc/apache2/sites-available/spacesaver.conf /etc/apache2/sites-enabled/
     
-    # Restarting apache server
-    sudo systemctl reload apache2
+        # Restarting apache server
+        case "${release}" in
+        ubuntu)
+            systemctl reload apache2
+            ;;
+        debian)
+            systemctl reload apache2
+            ;;
+        armbian)
+            systemctl reload apache2
+            ;;
+        fedora | amzn | virtuozzo | rhel | almalinux | rocky | ol)
+            systemctl reload httpd
+            ;;
+        centos)
+            systemctl reload httpd
+            ;;
+        arch | manjaro | parch)
+            systemctl reload httpd
+            ;;
+        *)
+            echo -e "${red}Cannot reload apache service.${plain}\n"
+            exit 1
+            ;;
+        esac
 
-    # Access rights to HoneyPot's files
-    sudo chown -R www-data:www-data /var/www/html/SpaceSaver
-    sudo chmod -R 755 /var/www/html/SpaceSaver
-    chmod 644 /var/www/html/SpaceSaver/index.html
+        # Access rights to HoneyPot's files
+        chown -R www-data:www-data /var/www/html/SpaceSaver
+        chmod -R 755 /var/www/html/SpaceSaver
+        chmod 644 /var/www/html/SpaceSaver/index.html
 
-    sudo systemctl reload apache2
+        echo -e "${plain}Done!"
+        echo -e "${green}Available here -> http://$server_ip:80"
 
-    echo -e "${green}${plain}Done!"
-    echo -e "${green}${plain}Available here -> http://$server_ip:80"
+    elif [ "$nginx_or_apache" = "Nginx" ]; then
+        case "${release}" in
+        ubuntu)
+            apt-get update
+            apt-get install nginx -y
+            ;;
+        debian)
+            apt-get update
+            apt-get install -y nginx
+            ;;
+        armbian)
+            apt-get update && apt-get install nginx -y
+            ;;
+        fedora | amzn | virtuozzo | rhel | almalinux | rocky | ol)
+            dnf -y update && dnf -y install nginx
+            ;;
+        centos)
+            yum -y install nginx
+            ;;
+        arch | manjaro | parch)
+            pacman -Syu --noconfirm nginx
+            ;;
+        *)
+            echo -e "${red}Unsupported operating system. Please check the script and install the necessary packages manually.${plain}\n"
+            exit 1
+            ;;
+        esac
+
+        # Start nginx server for HoneyPot
+        systemctl enable nginx
+        systemctl start nginx
+
+        #Downloading HoneyPot's files
+        git clone https://github.com/d3l1f3r/SpaceSaver.git
+        mv SpaceSaver/ /var/www/html/
+
+        # Config for nginx
+        tee /etc/nginx/sites-available/spacesaver.conf >/dev/null << 'EOF'
+        server {
+        listen 80 default_server;                  # ← важно для локального доступа
+        server_name 127.0.0.1 localhost SpaceSaver _;
+
+        root /var/www/html/SpaceSaver;
+        index index.html;
+
+        # Security Headers
+        add_header X-Content-Type-Options           nosniff always;
+        add_header X-Frame-Options                  SAMEORIGIN always;
+        add_header X-XSS-Protection                "1; mode=block" always;
+        add_header Referrer-Policy                 strict-origin-when-cross-origin always;
+        add_header Permissions-Policy              "interest-cohort=()" always;
+        add_header Strict-Transport-Security       "max-age=31536000; includeSubDomains" always;
+
+        server_tokens off;
+
+        location / {
+            try_files $uri $uri/ /index.html;
+            }
+
+        location ~ /\. {
+            deny all;
+            access_log off;
+            log_not_found off;
+            }
+
+        access_log /var/log/nginx/spacesaver.access.log;
+        error_log  /var/log/nginx/spacesaver.error.log;
+        }
+EOF
+
+        rm -f /etc/nginx/sites-enabled/default
+        ln -sf /etc/nginx/sites-available/spacesaver.conf /etc/nginx/sites-enabled/
+        systemctl reload nginx
+
+        echo -e "${plain}Done!"
+        echo -e "${green}Available here -> http://$server_ip:80"
+
+    fi
 }
 
 change_dns() {
