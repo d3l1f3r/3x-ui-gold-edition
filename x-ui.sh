@@ -408,6 +408,16 @@ restart() {
     fi
 }
 
+restart_xray() {
+    systemctl reload x-ui
+    LOGI "xray-core Restart signal sent successfully, Please check the log information to confirm whether xray restarted successfully"
+    sleep 2
+    show_xray_status
+    if [[ $# == 0 ]]; then
+        before_show_menu
+    fi
+}
+
 status() {
     if [[ $release == "alpine" ]]; then
         rc-service x-ui status
@@ -2305,28 +2315,29 @@ show_menu() {
 │  ${green}11.${plain} Start                                     │
 │  ${green}12.${plain} Stop                                      │
 │  ${green}13.${plain} Restart                                   │
-│  ${green}14.${plain} Check Status                              │
-│  ${green}15.${plain} Logs Management                           │
+|  ${green}14.${plain} Restart Xray                              │
+│  ${green}15.${plain} Check Status                              │
+│  ${green}16.${plain} Logs Management                           │
 │────────────────────────────────────────────────│
-│  ${green}16.${plain} Enable Autostart                          │
-│  ${green}17.${plain} Disable Autostart                         │
+│  ${green}17.${plain} Enable Autostart                          │
+│  ${green}18.${plain} Disable Autostart                         │
 │────────────────────────────────────────────────│
-│  ${green}18.${plain} SSL Certificate Management                │
-│  ${green}19.${plain} Cloudflare SSL Certificate                │
-│  ${green}20.${plain} IP Limit Management                       │
-│  ${green}21.${plain} Firewall Management                       │
-│  ${green}22.${plain} SSH Port Forwarding Management            │
-│  ${green}23.${plain} HoneyPot (Fakesite)                       │
-│  ${green}24.${plain} Change DNS resolver                       │
+│  ${green}19.${plain} SSL Certificate Management                │
+│  ${green}20.${plain} Cloudflare SSL Certificate                │
+│  ${green}21.${plain} IP Limit Management                       │
+│  ${green}22.${plain} Firewall Management                       │
+│  ${green}23.${plain} SSH Port Forwarding Management            │
+│  ${green}24.${plain} HoneyPot (Fakesite)                       │
+│  ${green}25.${plain} Change DNS resolver                       │
 │────────────────────────────────────────────────│
-│  ${green}25.${plain} Enable BBR                                │
-│  ${green}26.${plain} Update Geo Files                          │
-│  ${green}27.${plain} Speedtest by Ookla                        │
-│  ${green}28.${plain} Librespeed                                │
+│  ${green}26.${plain} Enable BBR                                │
+│  ${green}27.${plain} Update Geo Files                          │
+│  ${green}28.${plain} Speedtest by Ookla                        │
+│  ${green}29.${plain} Librespeed                                │
 ╚────────────────────────────────────────────────╝
 "
     show_status
-    echo && read -rp "Please enter your selection [0-28]: " num
+    echo && read -rp "Please enter your selection [0-29]: " num
 
     case "${num}" in
     0)
@@ -2372,52 +2383,55 @@ show_menu() {
         check_install && restart
         ;;
     14)
-        check_install && status
+        check_install && restart_xray
         ;;
     15)
-        check_install && show_log
+        check_install && status
         ;;
     16)
-        check_install && enable
+        check_install && show_log
         ;;
     17)
-        check_install && disable
+        check_install && enable
         ;;
     18)
-        ssl_cert_issue_main
+        check_install && disable
         ;;
     19)
-        ssl_cert_issue_CF
+        ssl_cert_issue_main
         ;;
     20)
-        iplimit_main
+        ssl_cert_issue_CF
         ;;
     21)
-        firewall_menu
+        iplimit_main
         ;;
     22)
-        SSH_port_forwarding
+        firewall_menu
         ;;
     23)
-        create_honeypot
+        SSH_port_forwarding
         ;;
     24)
-        change_dns
+        create_honeypot
         ;;
     25)
-        bbr_menu
+        change_dns
         ;;
     26)
-        update_geo
+        bbr_menu
         ;;
     27)
-        run_speedtest
+        update_geo
         ;;
     28)
+        run_speedtest
+        ;;
+    29)
         run_librespeed
         ;;
     *)
-        LOGE "Please enter the correct number [0-28]"
+        LOGE "Please enter the correct number [0-29]"
         ;;
     esac
 }
