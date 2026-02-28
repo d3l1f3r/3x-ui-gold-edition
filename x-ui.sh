@@ -1673,16 +1673,29 @@ run_speedtest() {
 
 run_librespeed() {
 
-    if command -v librespeed-cli &>/dev/null; then
-        librespeed-cli
-    else
-        #Intalling LibreSpeed
-        echo -e "${yellow} Installing LibreSpeed..."
+    echo -e "${yellow}What do you want to do?\n1) Use\n2) Install/Update\n3) Delete"
+    read -p ": " action
+
+    if [ "$action" = 1 ]; then
+        if command -v librespeed-cli &>/dev/null; then
+            librespeed-cli
+        else
+            echo -e "${red}LibreSpeed is not installed!"
+        fi
+    
+    elif [ "$action" = 2 ]; then
+        echo -e "${yellow} Installing\Updating LibreSpeed..."
+        #Uninstall old version, or actual version
+        rm -f librespeed-cli_*_linux_amd64.tar.gz && rm -rf /usr/bin/librespeed-cli
         VERSION=$(curl -s "https://api.github.com/repos/librespeed/speedtest-cli/releases/latest"| grep '"tag_name":' | sed -E 's/.*"v?([^"]+)".*/\1/')
         wget https://github.com/librespeed/speedtest-cli/releases/download/v${VERSION}/librespeed-cli_${VERSION}_linux_amd64.tar.gz
         tar -xzvf librespeed-cli_${VERSION}_linux_amd64.tar.gz && mv librespeed-cli /usr/bin
-        echo -e "${green}Starting libreSpeed..."
+        echo -e "${green}Starting libreSpeed... (Delete old archive)"
         librespeed-cli
+    elif [ "$action" = 3 ]; then
+        #Uninstall LibreSpeed
+        rm -f librespeed-cli_*_linux_amd64.tar.gz && rm -rf /usr/bin/librespeed-cli
+        echo -e "${green}LibreSpeed was deleted!"
     fi
 }
 
@@ -1892,14 +1905,28 @@ EOF
 }
 
 change_dns() {
-    echo -e "${yellow}${plain}Changing DNS resolver"
-    echo -e "${plain}Enter resolver (default: 9.9.9.9): "
+    echo -e "${yellow}Changing DNS resolver"
+    echo -e "${plain}Enter resolver (default: 9.9.9.9 for IPv4 or 2620:fe::fe for IPv6): "
     read resolver
 
-    if [ -n "$resolver" ]; then
-        echo "nameserver    $resolver" > /etc/resolv.conf
+    IPv6_on=$(cat /proc/sys/net/ipv6/conf/all/disable_ipv6)
+    echo $IPv6_on
+
+    if [ "$IPv6_on" = 0 ]; then
+        echo -e "${green}Your server using IPv6!"
+        if [ -n "$resolver" ]; then
+            echo "nameserver    $resolver" > /etc/resolv.conf
+        else
+            echo "nameserver    9.9.9.9" > /etc/resolv.conf
+            echo "nameserver    2620:fe::fe" > /etc/resolv.conf
+        fi
     else
-        echo "nameserver    9.9.9.9" > /etc/resolv.conf
+        echo -e "${green}IPv6 is disabled!"
+        if [ -n "$resolver" ]; then
+            echo "nameserver    $resolver" > /etc/resolv.conf
+        else
+            echo "nameserver    9.9.9.9" > /etc/resolv.conf
+        fi
     fi
     echo -e "${green}${plain}Done!"
 }
