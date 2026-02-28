@@ -1906,7 +1906,7 @@ EOF
 
 change_dns() {
     echo -e "${yellow}Changing DNS resolver"
-    echo -e "${plain}Enter resolver (default: 9.9.9.9 for IPv4 or 2620:fe::fe for IPv6): "
+    echo -e "${plain}Enter resolver (default: quad9): "
     read resolver
 
     IPv6_on=$(cat /proc/sys/net/ipv6/conf/all/disable_ipv6)
@@ -1914,10 +1914,13 @@ change_dns() {
 
     if [ "$IPv6_on" = 0 ]; then
         echo -e "${green}Your server using IPv6!"
-        if [ -n "$resolver" ]; then
+        echo -e "${plain}Enter server for IPv6"
+        read -p ": " resolver_ipv6
+        if [ -n "$resolver" ] && [ -n "$resolver_ipv6" ]; then
             echo "nameserver    $resolver" > /etc/resolv.conf
+            echo "nameserver    $resolver_ipv6" > /etc/resolv.conf
         else
-            echo "nameserver    9.9.9.9" > /etc/resolv.conf
+            echo "nameserver    9.9.9.9" > /etc/resolv.conf 
             echo "nameserver    2620:fe::fe" > /etc/resolv.conf
         fi
     else
