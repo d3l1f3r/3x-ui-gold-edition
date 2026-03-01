@@ -1856,8 +1856,6 @@ create_honeypot() {
         systemctl enable nginx
         systemctl start nginx
 
-        #Downloading HoneyPot's files
-        git clone https://github.com/d3l1f3r/SpaceSaver.git
         mv SpaceSaver/ /var/www/html/
 
         # Config for nginx
